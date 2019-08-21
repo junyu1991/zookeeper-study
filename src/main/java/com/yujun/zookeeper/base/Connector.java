@@ -18,15 +18,16 @@ import java.util.List;
  **/
 @Slf4j
 public class Connector {
-    private String connectString = "172.18.1.109:2181";
 
+    private String connectString = "172.18.1.109:2181";
     private ZooKeeper zooKeeper = null;
 
-    public Connector(){
-        this.init();
+    public Connector(String connectString){
+        this.init(connectString);
     }
 
-    private void init(){
+
+    private void init(String connectString){
         try {
             this.zooKeeper = new ZooKeeper(connectString, 50000, new ConnectWatcher());
         } catch (IOException e) {
