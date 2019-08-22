@@ -6,9 +6,12 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
 import org.apache.zookeeper.data.Stat;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author admin
@@ -18,18 +21,77 @@ import java.util.List;
  **/
 @Slf4j
 public class Connector {
-
-    private String connectString = "172.18.1.109:2181";
+    /**  **/
+    private static volatile Connector instance = null;
+    /**  **/
     private ZooKeeper zooKeeper = null;
 
-    public Connector(String connectString){
-        this.init(connectString);
+    private Connector(ZookeeperConnectConfig config){
+        this.init(config);
+    }
+
+    public static Connector getInstance(ZookeeperConnectConfig config){
+        synchronized (Connector.class) {
+            if(instance == null)
+                instance = new Connector(config);
+            return instance;
+        }
+    }
+
+    public void lock(String lockPath){
+        if(this.zooKeeper == null){
+            return;
+        }
+        try {
+            String path = this.zooKeeper.create(lockPath, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+
+        } catch (KeeperException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void release(String lockPath) {
+
+    }
+
+    /**
+     * @author: admin
+     * @date: 2019/8/22
+     * @description: TODO 
+     * @param path
+     * @return: 
+     * @exception: 
+    */
+    public void getChildren(String path){
+        try {
+            List<String> children = zooKeeper.getChildren(path, false);
+            for(String c : children)
+                System.out.println(c);
+        } catch (KeeperException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
-    private void init(String connectString){
+
+
+
+
+    /**
+     * @author: admin
+     * @date: 2019/8/22
+     * @description: TODO 
+     * @param config
+     * @return: 
+     * @exception: 
+    */
+    public void init(ZookeeperConnectConfig config){
         try {
-            this.zooKeeper = new ZooKeeper(connectString, 50000, new ConnectWatcher());
+            this.zooKeeper = new ZooKeeper(config.getConnectString(), config.getSessionTimeout(), new ConnectWatcher());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -82,14 +144,16 @@ public class Connector {
         return result;
     }
 
-    @Deprecated
-    public void connect(){
-        this.connect(connectString);
-    }
+
+
 }
 
+/**
+ * @author: admin
+ * @date: 2019/8/22
+ * @description: TODO
+*/
 class ConnectWatcher implements Watcher {
     public void process(WatchedEvent watchedEvent) {
-
     }
 }
