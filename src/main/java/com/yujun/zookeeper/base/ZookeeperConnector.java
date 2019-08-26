@@ -3,17 +3,8 @@ package com.yujun.zookeeper.base;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Id;
-import org.apache.zookeeper.data.Stat;
-
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author admin
@@ -22,41 +13,24 @@ import java.util.concurrent.TimeUnit;
  * @description TODO
  **/
 @Slf4j
-public class Connector {
+public class ZookeeperConnector {
     /**  **/
-    private static volatile Connector instance = null;
+    private static volatile ZookeeperConnector instance = null;
     /**  **/
     private ZooKeeper zooKeeper = null;
 
-    private Connector(ZookeeperConnectConfig config){
+    private ZookeeperConnector(ZookeeperConnectConfig config){
         this.init(config);
     }
 
-    public static Connector getInstance(ZookeeperConnectConfig config){
-        synchronized (Connector.class) {
+    public static ZookeeperConnector getInstance(ZookeeperConnectConfig config){
+        synchronized (ZookeeperConnector.class) {
             if(instance == null)
-                instance = new Connector(config);
+                instance = new ZookeeperConnector(config);
             return instance;
         }
     }
 
-    public void lock(String lockPath){
-        if(this.zooKeeper == null){
-            return;
-        }
-        try {
-            String path = this.zooKeeper.create(lockPath, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-
-        } catch (KeeperException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void release(String lockPath) {
-
-    }
 
     /**
      * @author: admin
@@ -66,22 +40,10 @@ public class Connector {
      * @return: 
      * @exception: 
     */
-    public void getChildren(String path){
-        try {
-            List<String> children = zooKeeper.getChildren(path, false);
-            for(String c : children)
-                System.out.println(c);
-        } catch (KeeperException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public List<String> getChildren(String path) throws KeeperException, InterruptedException {
+        List<String> children = zooKeeper.getChildren(path, false);
+        return children;
     }
-
-
-
-
-
 
     /**
      * @author: admin
@@ -99,23 +61,6 @@ public class Connector {
         }
     }
 
-    @Deprecated
-    public void connect(String connectString) {
-        try {
-            this.zooKeeper = new ZooKeeper(connectString, 50000, new ConnectWatcher());
-            String result = zooKeeper.create("/test", null,ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
-            System.out.println(result);
-            this.setAuth();
-            Stat stat = zooKeeper.setACL(result, setAcl(), -1);
-
-            log.info(Stat.signature());
-            zooKeeper.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            this.close();
-        }
-    }
 
     public void close(){
         if(this.zooKeeper != null) {
@@ -130,26 +75,6 @@ public class Connector {
     public void setAuth() {
         if(this.zooKeeper != null) {
             zooKeeper.addAuthInfo("digest", "username:password".getBytes());
-        }
-    }
-
-    /**
-     * @author: admin
-     * @date: 2019/8/23
-     * @description: A method to test setAcl
-     * @param
-     * @return:
-     * @exception:
-    */
-    public void testAcl(String path){
-        try {
-            if(zooKeeper.exists(path,false) == null) {
-                zooKeeper.create(path,null,ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-            }
-            zooKeeper.setACL(path, setAcl(), -1);
-            zooKeeper.close();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -230,30 +155,18 @@ public class Connector {
         zooKeeper.setACL(path, acl, -1);
     }
 
-
-
-    public List<ACL> setAcl(){
-        List<ACL> result = new ArrayList<ACL>();
-        Id id = new Id();
-        ACL acl = new ACL();
-
-        id.setScheme("auth");
-        id.setId("test:test");
-        acl.setId(id);
-        acl.setPerms(ZooDefs.Perms.READ);
-        result.add(acl);
-
-        id.setScheme("digest");
-        id.setId("username:+Ir5sN1lGJEEs8xBZhZXKvjLJ7c=");
-
-        acl.setId(id);
-        acl.setPerms(ZooDefs.Perms.READ | ZooDefs.Perms.WRITE);
-        result.add(acl);
-
-        return result;
+    /** 
+     * 获取当前ZookeeperConnector中的zookeeper实例
+     * @author: yujun
+     * @date: 2019/8/26
+     * @description: TODO 
+     * @param 
+     * @return: {@link org.apache.zookeeper.ZooKeeper}
+     * @exception: 
+    */
+    public ZooKeeper getZooKeeper() {
+        return this.zooKeeper;
     }
-
-
 
 }
 

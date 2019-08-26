@@ -11,8 +11,10 @@ public class Const {
     public static final String READLOCK = "/lock/_locknoe_/read-";
     /** 分布式写锁path **/
     public static final String WRITELOCK = "/lock/_locknode_/write-";
+    /** 分布式锁path **/
+    public static final String LOCK = "/lock/_locknode_/lock-";
 
-    /**  **/
-    public static final String LOCK = "/lock";
+    /** Zookeeper目录分隔符 **/
+    public static final String ZOOKEEPERSEPRITE = "/";
 
 }
