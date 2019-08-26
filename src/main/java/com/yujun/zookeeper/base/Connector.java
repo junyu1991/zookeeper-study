@@ -1,5 +1,7 @@
 package com.yujun.zookeeper.base;
 
+import com.yujun.zookeeper.util.Const;
+import com.yujun.zookeeper.util.ZookeeperUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.ACL;
@@ -78,11 +80,6 @@ public class Connector {
         }
     }
 
-
-
-
-
-
     /**
      * @author: admin
      * @date: 2019/8/22
@@ -105,7 +102,7 @@ public class Connector {
             this.zooKeeper = new ZooKeeper(connectString, 50000, new ConnectWatcher());
             String result = zooKeeper.create("/test", null,ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT_SEQUENTIAL);
             System.out.println(result);
-            this.setAuth();
+            //this.setAuth();
             Stat stat = zooKeeper.setACL(result, setAcl(), -1);
 
             log.info(Stat.signature());
@@ -117,6 +114,15 @@ public class Connector {
         }
     }
 
+    /**
+     * 关闭当前zookeeper连接
+     * @author: hunter
+     * @date: 8/24/19
+     * @description: TODO
+     * @param
+     * @return:
+     * @exception:
+    */
     public void close(){
         if(this.zooKeeper != null) {
             try {
@@ -127,9 +133,43 @@ public class Connector {
         }
     }
 
-    public void setAuth() {
+
+    /**
+     * 给指定path设置digest ACL
+     * @author: hunter
+     * @date: 8/24/19
+     * @description: TODO
+     * @param path
+     * @param username
+     * @param password
+     * @param permisssion
+     * @return:
+     * @exception:
+    */
+    public void setAcl(String path, String username, String password, int permisssion) throws KeeperException, InterruptedException {
         if(this.zooKeeper != null) {
-            zooKeeper.addAuthInfo("digest", "username:password".getBytes());
+            if(this.zooKeeper.exists(path, false) != null) {
+                ACL acl = ZookeeperUtil.getAcl(username, password, permisssion);
+                List<ACL> acls = new ArrayList<ACL>();
+                acls.add(acl);
+                zooKeeper.setACL(path, acls, -1);
+            }
+        }
+    }
+
+    /**
+     * 给当前zookeeper连接添加auth info
+     * @author: hunter
+     * @date: 8/24/19
+     * @description: TODO
+     * @param username
+     * @param password
+     * @return:
+     * @exception:
+    */
+    public void setDigestAuth(String username, String password){
+        if(this.zooKeeper != null) {
+            zooKeeper.addAuthInfo(Const.DIGEST, new String(username+":"+password).getBytes());
         }
     }
 

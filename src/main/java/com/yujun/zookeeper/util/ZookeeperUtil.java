@@ -1,6 +1,9 @@
 package com.yujun.zookeeper.util;
 
 
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
+
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 
@@ -17,11 +20,11 @@ public class ZookeeperUtil {
      * @author: admin
      * @date: 2019/8/23
      * @description: TODO
-     * @param expression
-     * @return: {@link String}
+     * @param expression 用于生成秘文的字符串，格式例子： username:password
+     * @return: {@link String} 可直接用于acl中的id的字符串。
      * @exception:
     */
-    public static String getDigestString(String expression) {
+    public static String getDigestString(String expression) throws InvalidParameterException {
         String[] split = expression.split(":");
         StringBuilder result = new StringBuilder();
         if(split.length != 2)
@@ -35,5 +38,27 @@ public class ZookeeperUtil {
         }
         return result.toString();
     }
+
+    /**
+     * 获取使用digest控制的acl
+     * @author: hunter
+     * @date: 8/23/19
+     * @description: TODO
+     * @param username 用户名
+     * @param password 用户密码
+     * @param permission 节点权限
+     * @return: {@link ACL}
+     * @exception:
+    */
+    public static ACL getAcl(String username, String password, int permission){
+        Id ids = new Id();
+        ids.setScheme(Const.DIGEST);
+        ids.setId(getDigestString(username + ":" +password));
+        ACL acl = new ACL();
+        acl.setId(ids);
+        acl.setPerms(permission);
+        return acl;
+    }
+
 
 }
