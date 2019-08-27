@@ -23,9 +23,14 @@ public class LockWatcher implements Watcher {
     @Override
     public void process(WatchedEvent event) {
         Event.EventType type = event.getType();
-        if(event.getPath() == watchPath && type == Event.EventType.NodeDeleted) {
+        System.out.println(event.getPath() + " " + (type == Event.EventType.NodeDeleted));
+        System.out.println("Watcher " + watchPath);
+        if(event.getPath().equals(watchPath) && type == Event.EventType.NodeDeleted) {
+            System.out.println(event.getPath() + " deleted");
             log.debug(event.getPath() + " deleted");
-            waitObject.notify();
+            synchronized (waitObject) {
+                waitObject.notify();
+            }
         }
     }
 }

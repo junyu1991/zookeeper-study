@@ -121,6 +121,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
             throw new ZookeeperLockException("ZookeeperConnector is null, please call setZookeeperConnector() method to set ZookeeperConnector parameter");
         }
         LockWatcher lockWatcher = new LockWatcher(readObject, path);
+        System.out.println("Set watcher : " + path);
         Stat exists = zookeeperConnector.getZooKeeper().exists(path, lockWatcher);
         return exists;
     }

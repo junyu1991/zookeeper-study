@@ -37,6 +37,7 @@ public class ReadThread extends Thread {
                 System.out.println(getName() + " get the read lock [" + readLock.getLockString() +"] start to working....");
                 TimeUnit.SECONDS.sleep(this.sleepTime);
                 System.out.println(getName() + " work finished.");
+                readLock.realease();
                 break;
             } catch (Exception e) {
                 e.printStackTrace();

@@ -18,6 +18,8 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
     private Object readObject;
     /**  **/
     private String readLockString = null;
+    /** 等待锁时间 **/
+    private int waitTime = 10000;
 
     public ZookeeperReadLock(ZookeeperConnector zookeeperConnector) {
         super(zookeeperConnector);
@@ -44,15 +46,23 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
         String nodeName = createNode(readLockString, null);
         this.readLockString = nodeName;
         String writeNode = getNextLowerNode(Const.READWRITELOCK, nodeName,writeLockString);
+        System.out.println("Get Write node : " + writeNode);
         readObject = new Object();
         while(writeNode != null) {
             if(exists(writeNode, readObject) != null) {
-                readObject.wait();
+                synchronized (readObject) {
+                    readObject.wait();
+                }
                 writeNode = getNextLowerNode(Const.READWRITELOCK, nodeName,writeLockString);
             } else {
                 writeNode = getNextLowerNode(Const.READWRITELOCK, nodeName,writeLockString);
             }
         }
+    }
+
+    @Override
+    public void lock(String lockString, int waitTime) throws InterruptedException, KeeperException, ZookeeperLockException {
+
     }
 
     @Override

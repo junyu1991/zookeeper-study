@@ -18,7 +18,7 @@ import java.util.List;
 public class MainRunner {
     public static void main(String[] args) throws Exception {
 
-        String connectString = "172.18.1.109:2181";
+        String connectString = "127.0.0.1:2181";
         ZookeeperConnectConfig connectConfig = new ZookeeperConnectConfig();
         connectConfig.setConnectString(connectString);
         connectConfig.setSessionTimeout(500000);
