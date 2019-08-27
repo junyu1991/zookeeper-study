@@ -33,7 +33,7 @@ public class EncryptUtil {
     */
     public static String encodeSha1(String text) {
         try {
-            MessageDigest messageDigest = MessageDigest.getInstance("sha1");
+            MessageDigest messageDigest = MessageDigest.getInstance(Const.SHA1);
             messageDigest.update(text.getBytes());
             return getHex(messageDigest.digest());
         } catch (NoSuchAlgorithmException e) {
@@ -52,7 +52,7 @@ public class EncryptUtil {
     */
     public static String encodeSha1(byte[] content) {
         try {
-            MessageDigest messageDigest = MessageDigest.getInstance("sha1");
+            MessageDigest messageDigest = MessageDigest.getInstance(Const.SHA1);
             messageDigest.update(content);
             return getHex(messageDigest.digest());
         } catch (NoSuchAlgorithmException e) {
@@ -113,12 +113,12 @@ public class EncryptUtil {
      * @exception:
     */
     public static byte[] digestSha1(String content) throws NoSuchAlgorithmException {
-        return digest(content.getBytes(), "sha1");
+        return digest(content.getBytes(), Const.SHA1);
     }
 
     @Deprecated
     public static String digest(String content) throws NoSuchAlgorithmException {
-        MessageDigest instance = MessageDigest.getInstance("sha1");
+        MessageDigest instance = MessageDigest.getInstance(Const.SHA1);
         instance.update(content.getBytes());
         return DatatypeConverter.printHexBinary(instance.digest());
     }

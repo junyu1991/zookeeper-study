@@ -25,7 +25,7 @@ public class LockWatcher implements Watcher {
         Event.EventType type = event.getType();
         if(event.getPath() == watchPath && type == Event.EventType.NodeDeleted) {
             log.debug(event.getPath() + " deleted");
-            waitObject.notifyAll();
+            waitObject.notify();
         }
     }
 }

@@ -85,7 +85,7 @@ public class ZookeeperConnector {
      * @return: {@link java.lang.String}
      * @exception: 
     */
-    public String createNodeIfNotExists(String path) throws Exception {
+    public synchronized String createNodeIfNotExists(String path) throws Exception {
         if(zooKeeper.exists(path, false) != null) {
             return path;
         }
@@ -118,7 +118,7 @@ public class ZookeeperConnector {
      * @return: {@link String}
      * @exception:
     */
-    public String createNodeIfNotExists(String path, CreateMode createMode, List<ACL> acl, byte[] data) throws KeeperException, InterruptedException {
+    public synchronized String createNodeIfNotExists(String path, CreateMode createMode, List<ACL> acl, byte[] data) throws KeeperException, InterruptedException {
         if(zooKeeper.exists(path, false) != null) {
             return path;
         }
@@ -164,10 +164,7 @@ public class ZookeeperConnector {
     */
     public ZooKeeper getZooKeeper() {
         return this.zooKeeper;
-
-
-
-
+    }
 }
 
 /**

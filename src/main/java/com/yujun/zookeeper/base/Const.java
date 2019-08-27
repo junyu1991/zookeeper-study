@@ -7,10 +7,15 @@ package com.yujun.zookeeper.base;
  * @description TODO
  **/
 public class Const {
-    /** 分布式读锁path **/
-    public static final String READLOCK = "/lock/_locknoe_/read-";
-    /** 分布式写锁path **/
-    public static final String WRITELOCK = "/lock/_locknode_/write-";
+    /** 分布式读写锁path **/
+    public static final String READWRITELOCK = "/lock/_locknoe_/rw";
+
+    /** 读锁前缀 **/
+    public static final String READ = "read-";
+
+    /** 写锁前缀 **/
+    public static final String WRITE = "write-";
+
     /** 分布式锁path **/
     public static final String LOCK = "/lock/_locknode_/lock-";
 
