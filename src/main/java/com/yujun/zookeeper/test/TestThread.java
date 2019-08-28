@@ -24,6 +24,7 @@ public class TestThread extends Thread {
         try {
             System.out.println(getName() + " waitting ");
             synchronized (lockObject) {
+                System.out.println(getName() + " get lock  ");
                 lockObject.wait();
                 System.out.println(getName() + " finished");
             }

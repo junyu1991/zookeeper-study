@@ -14,13 +14,13 @@ public class TestRunner {
         Object object2 = new Object();
         TestThread t1 = new TestThread("TestThread-1", object1);
         TestThread t2 = new TestThread("TestThread-2", object2);
-        NotifyThread n1 = new NotifyThread(object1);
-        NotifyThread n2 = new NotifyThread(object2);
+        NotifyThread n1 = new NotifyThread("notify-thread-1",object1);
+        NotifyThread n2 = new NotifyThread("notify-thread-2",object2);
         t1.start();
         t2.start();
         n1.start();
         n2.start();
-        System.out.println("finished");
+        //System.out.println("finished");
         //n2.start();
         //TimeUnit.SECONDS.sleep(1);
         /*TimeUnit.SECONDS.sleep(1);

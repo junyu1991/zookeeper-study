@@ -85,7 +85,7 @@ public class ZookeeperConnector {
      * @return: {@link java.lang.String}
      * @exception: 
     */
-    public synchronized String createNodeIfNotExists(String path) throws Exception {
+    public String createNodeIfNotExists(String path) throws Exception {
         if(zooKeeper.exists(path, false) != null) {
             return path;
         }
@@ -97,8 +97,13 @@ public class ZookeeperConnector {
             if("".equals(s) || s == null)
                 continue;
             sb.append(s);
-            if(zooKeeper.exists(sb.toString(), false) == null)
-                result = zooKeeper.create(sb.toString(), null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            try {
+                //多线程时会出现重复创建节点的情况，若不使用synchronized关键字，则需要捕获节点已存在异常
+                if (zooKeeper.exists(sb.toString(), false) == null)
+                    result = zooKeeper.create(sb.toString(), null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            } catch (KeeperException.NodeExistsException e) {
+                //e.printStackTrace();
+            }
             sb.append("/");
         }
         return result;
@@ -118,7 +123,7 @@ public class ZookeeperConnector {
      * @return: {@link String}
      * @exception:
     */
-    public synchronized String createNodeIfNotExists(String path, CreateMode createMode, List<ACL> acl, byte[] data) throws KeeperException, InterruptedException {
+    public String createNodeIfNotExists(String path, CreateMode createMode, List<ACL> acl, byte[] data) throws KeeperException, InterruptedException {
         if(zooKeeper.exists(path, false) != null) {
             return path;
         }
@@ -130,8 +135,13 @@ public class ZookeeperConnector {
             if("".equals(split[i]) || split[i] == null)
                 continue;
             sb.append(split[i]);
-            if(zooKeeper.exists(sb.toString(), false) == null)
-                result = zooKeeper.create(sb.toString(), null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            try {
+                //多线程时会出现重复创建节点的情况，若不使用synchronized关键字，则需要捕获节点已存在异常
+                if (zooKeeper.exists(sb.toString(), false) == null)
+                    result = zooKeeper.create(sb.toString(), null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            } catch (KeeperException.NodeExistsException e) {
+                //e.printStackTrace();
+            }
             sb.append("/");
         }
         sb.append(split[split.length-1]);

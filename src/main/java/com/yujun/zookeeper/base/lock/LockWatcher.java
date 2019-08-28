@@ -13,9 +13,9 @@ import org.apache.zookeeper.Watcher;
 @Slf4j
 public class LockWatcher implements Watcher {
 
-    private Object waitObject;
+    private ZookeeperWaitObject waitObject;
     private String watchPath;
-    public LockWatcher(Object waitObject, String watchPath) {
+    public LockWatcher(ZookeeperWaitObject waitObject, String watchPath) {
         this.waitObject = waitObject;
         this.watchPath = watchPath;
     }
@@ -23,12 +23,13 @@ public class LockWatcher implements Watcher {
     @Override
     public void process(WatchedEvent event) {
         Event.EventType type = event.getType();
-        System.out.println(event.getPath() + " " + (type == Event.EventType.NodeDeleted));
         System.out.println("Watcher " + watchPath);
         if(event.getPath().equals(watchPath) && type == Event.EventType.NodeDeleted) {
             System.out.println(event.getPath() + " deleted");
             log.debug(event.getPath() + " deleted");
             synchronized (waitObject) {
+                waitObject.setNotified(true);
+                System.out.println(event.getPath() + " notify others");
                 waitObject.notify();
             }
         }

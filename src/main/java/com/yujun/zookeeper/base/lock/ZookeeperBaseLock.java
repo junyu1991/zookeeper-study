@@ -74,7 +74,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
     }
 
     /**
-     * 从指定的路径下获取相应递增节点的下一小节点
+     * 从指定的路径下获取相应递增节点的下一小节点，需要指定节点前缀
      * @author: yujun
      * @date: 2019/8/26
      * @description: TODO
@@ -105,6 +105,35 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
         return lowerNode;
     }
 
+    /**
+     * 从指定的路径下获取相应递增节点的下一小节点
+     * @author: yujun
+     * @date: 2019/8/28
+     * @description: TODO
+     * @param path
+     * @param nodeName
+     * @return: {@link String}
+     * @exception:
+    */
+    protected String getNextLowerNode(String path, String nodeName) throws InterruptedException, KeeperException, ZookeeperLockException {
+        List<String> children = this.getChildren(path);
+        children.sort(new ZookeeperCompartor());
+        long max = Long.parseLong(nodeName.substring(nodeName.length()-10, nodeName.length()));
+        String lowerNode = null;
+        for(String p : children) {
+            if(p.length() <= 10)
+                continue;
+            long temp = Long.parseLong(p.substring(p.length()-10, p.length()));
+            if(temp >= max)
+                continue;
+            if(temp < max) {
+                lowerNode = path + Const.ZOOKEEPERSEPRITE + p;
+                break;
+            }
+        }
+        return lowerNode;
+    }
+
 
     /**
      * 给指定节点设置watch事件
@@ -116,7 +145,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
      * @return: {@link org.apache.zookeeper.data.Stat}
      * @exception:
      */
-    protected Stat exists(String path, Object readObject) throws KeeperException, InterruptedException, ZookeeperLockException {
+    protected Stat exists(String path, ZookeeperWaitObject readObject) throws KeeperException, InterruptedException, ZookeeperLockException {
         if(this.zookeeperConnector == null) {
             throw new ZookeeperLockException("ZookeeperConnector is null, please call setZookeeperConnector() method to set ZookeeperConnector parameter");
         }

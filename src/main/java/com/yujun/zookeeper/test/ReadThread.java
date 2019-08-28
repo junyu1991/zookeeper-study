@@ -2,10 +2,8 @@ package com.yujun.zookeeper.test;
 
 import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.base.lock.ZookeeperLock;
-import com.yujun.zookeeper.base.lock.ZookeeperLockEnum;
 import com.yujun.zookeeper.base.lock.ZookeeperReadLock;
-import com.yujun.zookeeper.exception.ZookeeperLockException;
-import org.apache.zookeeper.KeeperException;
+import com.yujun.zookeeper.base.lock.ZookeeperWriteLock;
 
 import java.util.concurrent.TimeUnit;
 
@@ -29,15 +27,16 @@ public class ReadThread extends Thread {
 
     public void run() {
         //ZookeeperLockEnum readLock = ZookeeperLockEnum.READLOCK;
-        ZookeeperLock readLock = new ZookeeperReadLock(connector);
+        ZookeeperLock lock = new ZookeeperReadLock(connector);
+        lock = new ZookeeperWriteLock(connector);
         while (true) {
             try {
                 System.out.println(getName() + " try to get the read lock...");
-                readLock.lock(this.lockName);
-                System.out.println(getName() + " get the read lock [" + readLock.getLockString() +"] start to working....");
+                lock.lock(this.lockName);
+                System.out.println(getName() + " get the read lock [" + lock.getLockString() +"] start to working....");
                 TimeUnit.SECONDS.sleep(this.sleepTime);
                 System.out.println(getName() + " work finished.");
-                readLock.realease();
+                lock.realease();
                 break;
             } catch (Exception e) {
                 e.printStackTrace();
