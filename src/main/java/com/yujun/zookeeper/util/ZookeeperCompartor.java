@@ -1,11 +1,10 @@
 package com.yujun.zookeeper.util;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 
 /**
- * @author admin
+ * 有序节点排序类
+ * @author yujun
  * @version 1.0.0
  * @date 2019/8/27 13:34
  * @description TODO

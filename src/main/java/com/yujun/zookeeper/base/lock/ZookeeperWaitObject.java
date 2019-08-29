@@ -15,6 +15,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class ZookeeperWaitObject {
     private boolean notified = false;
 }

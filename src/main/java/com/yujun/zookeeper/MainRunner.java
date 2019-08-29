@@ -2,9 +2,8 @@ package com.yujun.zookeeper;
 
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
-import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.test.DeleteNodeThread;
-import com.yujun.zookeeper.test.ReadThread;
+import com.yujun.zookeeper.test.ReadWriteThread;
 import com.yujun.zookeeper.util.ZookeeperCompartor;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -25,23 +24,15 @@ public class MainRunner {
         ZookeeperConnectConfig connectConfig = new ZookeeperConnectConfig();
         connectConfig.setConnectString(connectString);
         connectConfig.setSessionTimeout(500000);
-        ZookeeperConnector connector = ZookeeperConnector.getInstance(connectConfig);
+        
         String lockName = "test-read";
-        //String writeNode = connector.getZooKeeper().create(Const.READWRITELOCK+Const.ZOOKEEPERSEPRITE+Const.WRITE + lockName,null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+        //String writeNode = connectConfig.getZooKeeper().create(Const.READWRITELOCK+Const.ZOOKEEPERSEPRITE+Const.WRITE + lockName,null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
         //System.out.println("Create write node : " + writeNode);
-        ReadThread rt1 = new ReadThread(1,"read-thread-1", connector, lockName);
-        ReadThread rt2 = new ReadThread(2, "read-thread-2", connector, lockName);
-        ReadThread rt3 = new ReadThread(3, "read-thread-3", connector, lockName);
-        ReadThread rt4 = new ReadThread(5, "read-thread-4", connector, lockName);
-        //DeleteNodeThread dn = new DeleteNodeThread("Delete-thread", writeNode, connector);
-        rt3.start();
-        rt4.start();
-        rt1.start();
-        rt2.start();
+
 
         //TimeUnit.MILLISECONDS.sleep(500);
         //dn.start();
-        /*List<String> children = connector.getZooKeeper().getChildren("/test", false);
+        /*List<String> children = connectConfig.getZooKeeper().getChildren("/test", false);
         children.sort(new ZookeeperCompartor());
         for(String c : children)
             System.out.println(c);*/
@@ -52,5 +43,21 @@ public class MainRunner {
         System.out.println(Long.parseLong(node.substring(node.length()-10, node.length())));
         System.out.println(Long.parseLong(node.substring(node.length()-10, node.length())) == 0);
         */
+    }
+
+    public static void testRead(ZookeeperConnectConfig config, String lockName) {
+        ReadWriteThread rt1 = new ReadWriteThread(1,"read-thread-1", config, lockName);
+        ReadWriteThread rt2 = new ReadWriteThread(2, "read-thread-2", config, lockName);
+        ReadWriteThread rt3 = new ReadWriteThread(3, "read-thread-3", config, lockName);
+        ReadWriteThread rt4 = new ReadWriteThread(5, "read-thread-4", config, lockName);
+        //DeleteNodeThread dn = new DeleteNodeThread("Delete-thread", writeNode, connectConfig);
+        rt3.start();
+        rt4.start();
+        rt1.start();
+        rt2.start();
+    }
+
+    public static void testSequentialLock(ZookeeperConnectConfig config, String lockName) {
+
     }
 }

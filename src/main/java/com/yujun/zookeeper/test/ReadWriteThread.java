@@ -1,5 +1,6 @@
 package com.yujun.zookeeper.test;
 
+import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.base.lock.ZookeeperLock;
 import com.yujun.zookeeper.base.lock.ZookeeperReadLock;
@@ -13,12 +14,12 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/8/27 10:38
  * @description TODO
  **/
-public class ReadThread extends Thread {
+public class ReadWriteThread extends Thread {
 
     private int sleepTime;
-    private ZookeeperConnector connector;
+    private ZookeeperConnectConfig connector;
     private String lockName;
-    public ReadThread(int sleepTime, String name, ZookeeperConnector connector, String lockName){
+    public ReadWriteThread(int sleepTime, String name, ZookeeperConnectConfig connector, String lockName){
         super(name);
         this.sleepTime = sleepTime;
         this.connector = connector;
@@ -27,7 +28,7 @@ public class ReadThread extends Thread {
 
     public void run() {
         //ZookeeperLockEnum readLock = ZookeeperLockEnum.READLOCK;
-        ZookeeperLock lock = new ZookeeperReadLock(connector);
+        ZookeeperLock lock;
         lock = new ZookeeperWriteLock(connector);
         while (true) {
             try {

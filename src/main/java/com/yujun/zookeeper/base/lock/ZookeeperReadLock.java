@@ -1,11 +1,13 @@
 package com.yujun.zookeeper.base.lock;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
-import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
 import org.apache.zookeeper.KeeperException;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author admin
@@ -15,16 +17,13 @@ import org.apache.zookeeper.KeeperException;
  **/
 public class ZookeeperReadLock extends ZookeeperBaseLock {
 
-    /** 用于线程同步的Object **/
-    private ZookeeperWaitObject readObject;
+    /** 用于和LockWatcher通讯 **/
+    private BlockingQueue<String> blockingQueue = new LinkedBlockingQueue<String>();
     /**  **/
     private String readLockString = null;
     /** 等待锁时间 **/
     private int waitTime = 10000;
 
-    public ZookeeperReadLock(ZookeeperConnector zookeeperConnector) {
-        super(zookeeperConnector);
-    }
     public ZookeeperReadLock(ZookeeperConnectConfig config) {
         super(config);
     }
@@ -49,19 +48,10 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
         this.readLockString = nodeName;
         String writeNode = getNextLowerNode(path, nodeName,writeLockString);
         System.out.println("Get Write node : " + writeNode);
-        readObject = new ZookeeperWaitObject(false);
         while(writeNode != null) {
-            readObject.setNotified(false);
-            if(exists(writeNode, readObject) != null) {
-                if(!readObject.isNotified()) {
-                    synchronized (readObject) {
-                        readObject.wait();
-                        writeNode = getNextLowerNode(path, nodeName, writeLockString);
-                        System.out.println("Wait notified new node : " + writeNode);
-                    }
-                } else {
-                    writeNode = getNextLowerNode(path, nodeName, writeLockString);
-                }
+            if(exists(writeNode, blockingQueue) != null) {
+                blockingQueue.take();
+                writeNode = getNextLowerNode(path, nodeName, writeLockString);
             } else {
                 writeNode = getNextLowerNode(path, nodeName,writeLockString);
             }
@@ -69,8 +59,32 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
     }
 
     @Override
-    public void lock(String lockString, int waitTime) throws InterruptedException, KeeperException, ZookeeperLockException {
-
+    public boolean lock(String lockString, int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException {
+        this.readLockString = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString + Const.ZOOKEEPERSEPRITE  + Const.READ + lockString;
+        String writeLockString = Const.WRITE + lockString;
+        String nodeName = createNode(readLockString, null);
+        String path = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString;
+        this.readLockString = nodeName;
+        String writeNode = getNextLowerNode(path, nodeName,writeLockString);
+        System.out.println("Get Write node : " + writeNode);
+        while(writeNode != null) {
+            if(exists(writeNode, blockingQueue) != null) {
+                try {
+                    String tempPath = blockingQueue.poll(waitTime, unit);
+                    if(tempPath != null)
+                        writeNode = getNextLowerNode(path, nodeName, writeLockString);
+                    else {
+                        //获取锁超时，返回false
+                        return false;
+                    }
+                } catch (InterruptedException e) {
+                    return false;
+                }
+            } else {
+                writeNode = getNextLowerNode(path, nodeName,writeLockString);
+            }
+        }
+        return true;
     }
 
     @Override

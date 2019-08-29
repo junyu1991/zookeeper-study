@@ -11,6 +11,7 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
 
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * @author admin
@@ -22,10 +23,6 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
 
     private final ZookeeperConnector zookeeperConnector;
 
-    protected ZookeeperBaseLock(ZookeeperConnector zookeeperConnector) {
-        this.zookeeperConnector = zookeeperConnector;
-    }
-
     /**
      * 使用ZookeeperConnectConfig初始化zookeeperconnector连接类
      * @author: yujun
@@ -35,7 +32,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
      * @return:
      * @exception:
      */
-    public ZookeeperBaseLock(ZookeeperConnectConfig config) {
+    protected ZookeeperBaseLock(ZookeeperConnectConfig config) {
         this.zookeeperConnector = ZookeeperConnector.getInstance(config);
     }
 
@@ -51,7 +48,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
      */
     protected String createNode(String node, byte[] data) throws ZookeeperLockException, KeeperException, InterruptedException {
         if(this.zookeeperConnector == null) {
-            throw new ZookeeperLockException("ZookeeperConnector is null, please call setZookeeperConnector() method to set ZookeeperConnector parameter");
+            throw new ZookeeperLockException("The ZookeeperConnector is not initialized.");
         }
         String path = this.zookeeperConnector.createNodeIfNotExists(node, CreateMode.EPHEMERAL_SEQUENTIAL, ZooDefs.Ids.OPEN_ACL_UNSAFE, data);
         return path;
@@ -68,7 +65,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
      */
     protected List<String> getChildren(String path) throws ZookeeperLockException, KeeperException, InterruptedException {
         if(this.zookeeperConnector == null) {
-            throw new ZookeeperLockException("ZookeeperConnector is null, please call setZookeeperConnector() method to set ZookeeperConnector parameter");
+            throw new ZookeeperLockException("The ZookeeperConnector is not initialized.");
         }
         return this.zookeeperConnector.getChildren(path);
     }
@@ -141,15 +138,15 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
      * @date: 2019/8/26
      * @description: TODO
      * @param path
-     * @param readObject
+     * @param blockingQueue
      * @return: {@link org.apache.zookeeper.data.Stat}
      * @exception:
      */
-    protected Stat exists(String path, ZookeeperWaitObject readObject) throws KeeperException, InterruptedException, ZookeeperLockException {
+    protected Stat exists(String path, BlockingQueue<String> blockingQueue) throws KeeperException, InterruptedException, ZookeeperLockException {
         if(this.zookeeperConnector == null) {
-            throw new ZookeeperLockException("ZookeeperConnector is null, please call setZookeeperConnector() method to set ZookeeperConnector parameter");
+            throw new ZookeeperLockException("The ZookeeperConnector is not initialized.");
         }
-        LockWatcher lockWatcher = new LockWatcher(readObject, path);
+        LockWatcher lockWatcher = new LockWatcher(path, blockingQueue);
         System.out.println("Set watcher : " + path);
         Stat exists = zookeeperConnector.getZooKeeper().exists(path, lockWatcher);
         return exists;
@@ -166,9 +163,45 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
      */
     protected void deletePath(String path) throws ZookeeperLockException, KeeperException, InterruptedException {
         if(this.zookeeperConnector == null) {
-            throw new ZookeeperLockException("ZookeeperConnector is null, please call setZookeeperConnector() method to set ZookeeperConnector parameter");
+            throw new ZookeeperLockException("The ZookeeperConnector is not initialized.");
         }
         if(this.zookeeperConnector.getZooKeeper().exists(path, false) != null)
             this.zookeeperConnector.getZooKeeper().delete(path, -1);
+    }
+
+    /**
+     * 创建临时节点
+     * @author: yujun
+     * @date: 2019/8/29
+     * @description: TODO
+     * @param node
+     * @param data
+     * @return: {@link String}
+     * @exception:
+    */
+    protected String createEphemeralNode(String node, byte[] data) throws ZookeeperLockException, KeeperException, InterruptedException {
+        if(this.zookeeperConnector == null) {
+            throw new ZookeeperLockException("The ZookeeperConnector is not initialized.");
+        }
+        String path = this.zookeeperConnector.createNodeIfNotExists(node, CreateMode.EPHEMERAL, ZooDefs.Ids.OPEN_ACL_UNSAFE, data);
+        return path;
+    }
+
+    /** 
+     * 创建永久节点
+     * @author: yujun
+     * @date: 2019/8/29
+     * @description: TODO 
+     * @param node
+     * @param data
+     * @return: {@link String}
+     * @exception: 
+    */
+    protected String createPersistentNode(String node, byte[] data) throws ZookeeperLockException, KeeperException, InterruptedException {
+        if(this.zookeeperConnector == null) {
+            throw new ZookeeperLockException("The ZookeeperConnector is not initialized.");
+        }
+        String path = this.zookeeperConnector.createNodeIfNotExists(node, CreateMode.PERSISTENT, ZooDefs.Ids.OPEN_ACL_UNSAFE, data);
+        return path;
     }
 }

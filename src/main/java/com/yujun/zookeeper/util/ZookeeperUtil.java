@@ -22,7 +22,7 @@ public class ZookeeperUtil {
      * @date: 2019/8/23
      * @description: TODO
      * @param expression 用于生成秘文的字符串，格式例子： username:password
-     * @return: {@link String} 可直接用于acl中的id的字符串。
+     * @return: {@link String} 可直接用于acl中的id的字符串。如： username:+Ir5sN1lGJEEs8xBZhZXKvjLJ7c=
      * @exception:
     */
     public static String getDigestString(String expression) throws InvalidParameterException {

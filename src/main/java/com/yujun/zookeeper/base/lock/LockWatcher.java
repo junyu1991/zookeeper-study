@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 
+import java.util.concurrent.BlockingQueue;
+
 /**
  * @author admin
  * @version 1.0.0
@@ -13,11 +15,13 @@ import org.apache.zookeeper.Watcher;
 @Slf4j
 public class LockWatcher implements Watcher {
 
-    private ZookeeperWaitObject waitObject;
+    //private ZookeeperWaitObject waitObject;
+    private BlockingQueue<String> blockingQueue;
     private String watchPath;
-    public LockWatcher(ZookeeperWaitObject waitObject, String watchPath) {
-        this.waitObject = waitObject;
+    public LockWatcher(String watchPath, BlockingQueue<String> blockingQueue) {
+        //this.waitObject = waitObject;
         this.watchPath = watchPath;
+        this.blockingQueue = blockingQueue;
     }
 
     @Override
@@ -27,11 +31,12 @@ public class LockWatcher implements Watcher {
         if(event.getPath().equals(watchPath) && type == Event.EventType.NodeDeleted) {
             System.out.println(event.getPath() + " deleted");
             log.debug(event.getPath() + " deleted");
-            synchronized (waitObject) {
+            blockingQueue.offer(event.getPath());
+            /*synchronized (waitObject) {
                 waitObject.setNotified(true);
                 System.out.println(event.getPath() + " notify others");
                 waitObject.notify();
-            }
+            }*/
         }
     }
 }

@@ -2,9 +2,12 @@ package com.yujun.zookeeper.base.lock;
 
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
-import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
 import org.apache.zookeeper.KeeperException;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author admin
@@ -15,11 +18,7 @@ import org.apache.zookeeper.KeeperException;
 public class ZookeeperWriteLock extends ZookeeperBaseLock {
 
     private String writeLock = null;
-    private ZookeeperWaitObject waitObject;
-
-    public ZookeeperWriteLock(ZookeeperConnector zookeeperConnector) {
-        super(zookeeperConnector);
-    }
+    private BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
 
     public ZookeeperWriteLock(ZookeeperConnectConfig config) {
         super(config);
@@ -33,18 +32,10 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
         this.writeLock = nodeName;
         String writeNode = getNextLowerNode(path, nodeName);
         System.out.println("Get Write node : " + writeNode);
-        waitObject = new ZookeeperWaitObject(false);
         while(writeNode != null) {
-            waitObject.setNotified(false);
             if(exists(writeNode, waitObject) != null) {
-                if(!waitObject.isNotified()) {
-                    synchronized (waitObject) {
-                        waitObject.wait();
-                        writeNode = getNextLowerNode(path, nodeName);
-                    }
-                } else {
-                    writeNode = getNextLowerNode(path, nodeName);
-                }
+                this.waitObject.take();
+                writeNode = getNextLowerNode(path, nodeName);
             } else {
                 writeNode = getNextLowerNode(path, nodeName);
             }
@@ -52,8 +43,29 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
     }
 
     @Override
-    public void lock(String lockString, int waitTime) throws InterruptedException, KeeperException, ZookeeperLockException {
-
+    public boolean lock(String lockString, int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException {
+        this.writeLock = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString + Const.ZOOKEEPERSEPRITE  + Const.WRITE + lockString;
+        String nodeName = createNode(writeLock, null);
+        String path = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString;
+        this.writeLock = nodeName;
+        String writeNode = getNextLowerNode(path, nodeName);
+        System.out.println("Get Write node : " + writeNode);
+        while(writeNode != null) {
+            if(exists(writeNode, waitObject) != null) {
+                try {
+                    String poll = this.waitObject.poll(waitTime, unit);
+                    if(poll == null) {
+                        return false;
+                    }
+                    writeNode = getNextLowerNode(path, nodeName);
+                } catch (InterruptedException e) {
+                    return false;
+                }
+            } else {
+                writeNode = getNextLowerNode(path, nodeName);
+            }
+        }
+        return true;
     }
 
     @Override

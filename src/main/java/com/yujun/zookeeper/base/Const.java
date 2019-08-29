@@ -19,6 +19,9 @@ public class Const {
     /** 分布式锁path **/
     public static final String LOCK = "/lock/_locknode_/lock-";
 
+    /** 分布式时序锁path **/
+    public static final String SEQUENTIALLOCK = "/lock/_locknode_/sequential";
+
     /** Zookeeper目录分隔符 **/
     public static final String ZOOKEEPERSEPRITE = "/";
 
