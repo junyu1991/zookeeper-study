@@ -3,6 +3,7 @@ package com.yujun.zookeeper.base.lock;
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.util.TimeUtil;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.concurrent.BlockingQueue;
@@ -49,11 +50,17 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
         String path = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString;
         this.writeLock = nodeName;
         String writeNode = getNextLowerNode(path, nodeName);
+        long lockTime = TimeUtil.toMicros(waitTime, unit);
+        long start = System.currentTimeMillis();
+        start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
+        long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         System.out.println("Get Write node : " + writeNode);
         while(writeNode != null) {
+            now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            lockTime = lockTime - (now - start);
             if(exists(writeNode, waitObject) != null) {
                 try {
-                    String poll = this.waitObject.poll(waitTime, unit);
+                    String poll = this.waitObject.poll(lockTime, unit);
                     if(poll == null) {
                         return false;
                     }

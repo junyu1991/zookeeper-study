@@ -1,8 +1,6 @@
 package com.yujun.zookeeper.base;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * Zookeeper连接配置类
@@ -14,6 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class ZookeeperConnectConfig {
 
     /** zookeeper host:port **/

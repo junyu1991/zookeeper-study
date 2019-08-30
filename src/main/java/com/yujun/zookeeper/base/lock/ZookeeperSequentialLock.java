@@ -4,6 +4,7 @@ import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.util.TimeUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 
@@ -49,10 +50,16 @@ public class ZookeeperSequentialLock extends ZookeeperBaseLock {
         this.lockPath = fullNode;
         String path = Const.SEQUENTIALLOCK + Const.ZOOKEEPERSEPRITE  + lockString;
         String lowerNode = this.getNextLowerNode(path, fullNode);
+        long lockTime = TimeUtil.toMicros(waitTime, unit);
+        long start = System.currentTimeMillis();
+        start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
+        long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         while(lowerNode != null) {
+            now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            lockTime = lockTime - (now - start);
             if(exists(lowerNode, waitObject) != null) {
                 try {
-                    String poll = this.waitObject.poll(waitTime, unit);
+                    String poll = this.waitObject.poll(lockTime, unit);
                     if (poll == null)
                         return false;
                     lowerNode = getNextLowerNode(path, lowerNode);

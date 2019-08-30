@@ -3,6 +3,7 @@ package com.yujun.zookeeper.base.lock;
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.util.TimeUtil;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.concurrent.BlockingQueue;
@@ -67,14 +68,21 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
         this.readLockString = nodeName;
         String writeNode = getNextLowerNode(path, nodeName,writeLockString);
         System.out.println("Get Write node : " + writeNode);
+        long lockTime = TimeUtil.toMicros(waitTime, unit);
+        long start = System.currentTimeMillis();
+        start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
+        long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         while(writeNode != null) {
+            now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            lockTime = lockTime - (now - start);
             if(exists(writeNode, blockingQueue) != null) {
                 try {
-                    String tempPath = blockingQueue.poll(waitTime, unit);
-                    if(tempPath != null)
+                    String tempPath = blockingQueue.poll(lockTime, TimeUnit.MICROSECONDS);
+                    if(tempPath != null) {
                         writeNode = getNextLowerNode(path, nodeName, writeLockString);
-                    else {
+                    } else {
                         //获取锁超时，返回false
+                        System.out.println(TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS)-start);
                         return false;
                     }
                 } catch (InterruptedException e) {

@@ -3,6 +3,7 @@ package com.yujun.zookeeper.base.lock;
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.util.TimeUtil;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.concurrent.BlockingQueue;
@@ -41,9 +42,15 @@ public class ZookeeperNormalLock extends ZookeeperBaseLock {
     @Override
     public boolean lock(String lockString, int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException {
         this.lockString = Const.LOCK + Const.ZOOKEEPERSEPRITE  + lockString;
+        long lockTime = TimeUtil.toMicros(waitTime, unit);
+        long start = System.currentTimeMillis();
+        start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
+        long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         while(exists(this.lockString, waitObject) != null) {
+            now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            lockTime = lockTime - (now - start);
             try {
-                String poll = waitObject.poll(waitTime, unit);
+                String poll = waitObject.poll(lockTime, unit);
                 if(poll == null)
                     return false;
             } catch (InterruptedException e) {

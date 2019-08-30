@@ -23,7 +23,7 @@ public interface ZookeeperLock {
     */
     public void lock(String lockString) throws InterruptedException, KeeperException, ZookeeperLockException;
     /** 
-     * 尝试获取分布式锁 lockString，设置了超时，若超时获取锁失败返回false，成功则返回true
+     * 尝试获取分布式锁 lockString，使用waitTime和unit设置超时时间，若超时则获取锁失败返回false，成功则返回true
      * @author: yujun
      * @date: 2019/8/29
      * @description: TODO 
