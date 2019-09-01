@@ -4,6 +4,7 @@ import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
 import com.yujun.zookeeper.util.TimeUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/8/29 10:24
  * @description TODO
  **/
+@Slf4j
 public class ZookeeperNormalLock extends ZookeeperBaseLock {
 
     private String lockString;

@@ -5,6 +5,7 @@ import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
 import com.yujun.zookeeper.util.ZookeeperCompartor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -19,6 +20,7 @@ import java.util.concurrent.BlockingQueue;
  * @date 2019/8/27 15:37
  * @description TODO
  **/
+@Slf4j
 public abstract class ZookeeperBaseLock implements ZookeeperLock {
 
     private final ZookeeperConnector zookeeperConnector;
@@ -147,7 +149,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
             throw new ZookeeperLockException("The ZookeeperConnector is not initialized.");
         }
         LockWatcher lockWatcher = new LockWatcher(path, blockingQueue);
-        System.out.println("Set watcher : " + path);
+        log.info("Set watcher : " + path);
         Stat exists = zookeeperConnector.getZooKeeper().exists(path, lockWatcher);
         return exists;
     }

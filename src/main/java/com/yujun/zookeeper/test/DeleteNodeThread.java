@@ -1,6 +1,7 @@
 package com.yujun.zookeeper.test;
 
 import com.yujun.zookeeper.base.ZookeeperConnector;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.concurrent.TimeUnit;
@@ -11,6 +12,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/8/28 10:19
  * @description TODO
  **/
+@Slf4j
 public class DeleteNodeThread extends Thread{
     private ZookeeperConnector connector;
     private String path;
@@ -24,7 +26,7 @@ public class DeleteNodeThread extends Thread{
     @Override
     public void run() {
         try {
-            System.out.println(getName() + " delete thread start");
+            log.info(getName() + " delete thread start");
             //TimeUnit.SECONDS.sleep(20);
             this.connector.getZooKeeper().delete(this.path, -1);
         } catch (InterruptedException e) {

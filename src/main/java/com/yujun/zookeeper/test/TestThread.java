@@ -1,11 +1,14 @@
 package com.yujun.zookeeper.test;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author hunter
  * @version 1.0.0
  * @date 8/27/19 8:36 PM
  * @description TODO
  **/
+@Slf4j
 public class TestThread extends Thread {
 
     private Object lockObject = new Object();
@@ -22,13 +25,13 @@ public class TestThread extends Thread {
     @Override
     public void run() {
         try {
-            System.out.println(getName() + " waitting ");
+            log.info(getName() + " waitting ");
             synchronized (lockObject) {
-                System.out.println(getName() + " get lock  ");
+                log.info(getName() + " get lock  ");
                 lockObject.wait();
-                System.out.println(getName() + " finished");
+                log.info(getName() + " finished");
             }
-            //System.out.println("exit");
+            //log.info("exit");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

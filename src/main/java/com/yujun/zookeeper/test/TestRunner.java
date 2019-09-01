@@ -1,6 +1,7 @@
 package com.yujun.zookeeper.test;
 
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +11,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/8/27 15:18
  * @description TODO
  **/
+@Slf4j
 public class TestRunner {
     public static void main(String[] args) throws InterruptedException {
         /*Object object1 = new Object();
@@ -22,7 +24,7 @@ public class TestRunner {
         t2.start();
         n1.start();
         n2.start();*/
-        //System.out.println("finished");
+        //log.info("finished");
         //n2.start();
         //TimeUnit.SECONDS.sleep(1);
         /*TimeUnit.SECONDS.sleep(1);
@@ -42,6 +44,6 @@ public class TestRunner {
     public static void getReadLock(ZookeeperConnectConfig config, String lockName) {
         ReadWriteThread readWriteThread = new ReadWriteThread(1, "Time-Thread", config, lockName);
         readWriteThread.start();
-        System.out.println("Start....");
+        log.info("Start....");
     }
 }

@@ -5,6 +5,7 @@ import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
 import com.yujun.zookeeper.util.TimeUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/8/29 9:46
  * @description TODO
  **/
+@Slf4j
 public class ZookeeperSequentialLock extends ZookeeperBaseLock {
 
     private String lockPath;

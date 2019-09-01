@@ -27,7 +27,7 @@ public class MainRunner {
         
         String lockName = "test-read";
         //String writeNode = connectConfig.getZooKeeper().create(Const.READWRITELOCK+Const.ZOOKEEPERSEPRITE+Const.WRITE + lockName,null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
-        //System.out.println("Create write node : " + writeNode);
+        //log.info("Create write node : " + writeNode);
 
 
         //TimeUnit.MILLISECONDS.sleep(500);
@@ -35,13 +35,13 @@ public class MainRunner {
         /*List<String> children = connectConfig.getZooKeeper().getChildren("/test", false);
         children.sort(new ZookeeperCompartor());
         for(String c : children)
-            System.out.println(c);*/
+            log.info(c);*/
 
         /*
         String node = "test0000000000";
-        System.out.println(node.substring(0, node.length()-10));
-        System.out.println(Long.parseLong(node.substring(node.length()-10, node.length())));
-        System.out.println(Long.parseLong(node.substring(node.length()-10, node.length())) == 0);
+        log.info(node.substring(0, node.length()-10));
+        log.info(Long.parseLong(node.substring(node.length()-10, node.length())));
+        log.info(Long.parseLong(node.substring(node.length()-10, node.length())) == 0);
         */
     }
 

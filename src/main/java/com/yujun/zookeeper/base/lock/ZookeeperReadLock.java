@@ -4,6 +4,7 @@ import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
 import com.yujun.zookeeper.util.TimeUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019/8/27 15:40
  * @description TODO
  **/
+@Slf4j
 public class ZookeeperReadLock extends ZookeeperBaseLock {
 
     /** 用于和LockWatcher通讯 **/
@@ -48,7 +50,7 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
         String path = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString;
         this.readLockString = nodeName;
         String writeNode = getNextLowerNode(path, nodeName,writeLockString);
-        System.out.println("Get Write node : " + writeNode);
+        log.info("Get Write node : " + writeNode);
         while(writeNode != null) {
             if(exists(writeNode, blockingQueue) != null) {
                 blockingQueue.take();
@@ -67,7 +69,7 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
         String path = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString;
         this.readLockString = nodeName;
         String writeNode = getNextLowerNode(path, nodeName,writeLockString);
-        System.out.println("Get Write node : " + writeNode);
+        log.info("Get Write node : " + writeNode);
         long lockTime = TimeUtil.toMicros(waitTime, unit);
         long start = System.currentTimeMillis();
         start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
@@ -82,7 +84,6 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
                         writeNode = getNextLowerNode(path, nodeName, writeLockString);
                     } else {
                         //获取锁超时，返回false
-                        System.out.println(TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS)-start);
                         return false;
                     }
                 } catch (InterruptedException e) {
