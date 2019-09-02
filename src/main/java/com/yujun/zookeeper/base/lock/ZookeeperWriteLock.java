@@ -3,6 +3,7 @@ package com.yujun.zookeeper.base.lock;
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.exception.ZookeeperLockUnreleaseException;
 import com.yujun.zookeeper.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
@@ -20,19 +21,19 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ZookeeperWriteLock extends ZookeeperBaseLock {
 
-    private String writeLock = null;
     private BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
 
-    public ZookeeperWriteLock(ZookeeperConnectConfig config) {
-        super(config);
+    public ZookeeperWriteLock(ZookeeperConnectConfig config, String lockString) {
+        super(config, lockString);
     }
 
     @Override
-    public void lock(String lockString) throws InterruptedException, KeeperException, ZookeeperLockException {
-        this.writeLock = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString + Const.ZOOKEEPERSEPRITE  + Const.WRITE + lockString;
-        String nodeName = createNode(writeLock, null);
+    public void lock() throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
+        this.checkedLockRelease();
+        String tempLockString = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString + Const.ZOOKEEPERSEPRITE  + Const.WRITE + lockString;
+        String nodeName = createNode(tempLockString, null);
         String path = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString;
-        this.writeLock = nodeName;
+        LockContainer.addLock(Thread.currentThread(), nodeName);
         String writeNode = getNextLowerNode(path, nodeName);
         log.info("Get Write node : " + writeNode);
         while(writeNode != null) {
@@ -46,11 +47,12 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
     }
 
     @Override
-    public boolean lock(String lockString, int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException {
-        this.writeLock = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString + Const.ZOOKEEPERSEPRITE  + Const.WRITE + lockString;
-        String nodeName = createNode(writeLock, null);
+    public boolean lock(int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
+        this.checkedLockRelease();
+        String tempLockString = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString + Const.ZOOKEEPERSEPRITE  + Const.WRITE + lockString;
+        String nodeName = createNode(tempLockString, null);
         String path = Const.READWRITELOCK + Const.ZOOKEEPERSEPRITE + lockString;
-        this.writeLock = nodeName;
+        LockContainer.addLock(Thread.currentThread(), nodeName);
         String writeNode = getNextLowerNode(path, nodeName);
         long lockTime = TimeUtil.toMicros(waitTime, unit);
         long start = System.currentTimeMillis();
@@ -62,12 +64,15 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
             lockTime = lockTime - (now - start);
             if(exists(writeNode, waitObject) != null) {
                 try {
-                    String poll = this.waitObject.poll(lockTime, unit);
+                    String poll = this.waitObject.poll(lockTime, TimeUnit.MICROSECONDS);
                     if(poll == null) {
+                        //获取锁超时，删除创建的path以防死锁
+                        this.realease();
                         return false;
                     }
                     writeNode = getNextLowerNode(path, nodeName);
                 } catch (InterruptedException e) {
+                    this.realease();
                     return false;
                 }
             } else {
@@ -77,15 +82,4 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
         return true;
     }
 
-    @Override
-    public void realease() throws InterruptedException, KeeperException, ZookeeperLockException {
-        if(this.writeLock != null) {
-            this.deletePath(this.writeLock);
-        }
-    }
-
-    @Override
-    public String getLockString() {
-        return this.writeLock;
-    }
 }

@@ -4,6 +4,7 @@ import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.exception.ZookeeperLockUnreleaseException;
 import com.yujun.zookeeper.util.ZookeeperCompartor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
@@ -24,6 +25,7 @@ import java.util.concurrent.BlockingQueue;
 public abstract class ZookeeperBaseLock implements ZookeeperLock {
 
     private final ZookeeperConnector zookeeperConnector;
+    protected final String lockString;
 
     /**
      * 使用ZookeeperConnectConfig初始化zookeeperconnector连接类
@@ -31,11 +33,13 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
      * @date: 2019/8/26
      * @description: TODO
      * @param config
+     * @param lockString
      * @return:
      * @exception:
      */
-    protected ZookeeperBaseLock(ZookeeperConnectConfig config) {
+    protected ZookeeperBaseLock(ZookeeperConnectConfig config, String lockString) {
         this.zookeeperConnector = ZookeeperConnector.getInstance(config);
+        this.lockString = lockString;
     }
 
     /**
@@ -205,5 +209,33 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
         }
         String path = this.zookeeperConnector.createNodeIfNotExists(node, CreateMode.PERSISTENT, ZooDefs.Ids.OPEN_ACL_UNSAFE, data);
         return path;
+    }
+
+    /** 
+     * 检测当前锁是否有未释放的锁资源，若有抛出ZookeeperLockUnreleaseException
+     * @author: yujun
+     * @date: 2019/9/2
+     * @description: TODO 
+     * @param 
+     * @return: 
+     * @exception: ZookeeperLockUnreleaseException 存在未释放的锁资源
+    */
+    protected void checkedLockRelease() throws ZookeeperLockUnreleaseException {
+        Thread t = Thread.currentThread();
+        if(LockContainer.containLock(t)) {
+            throw new ZookeeperLockUnreleaseException("The current thread has unrelease lock [" + LockContainer.getLockString(t)+"]");
+        }
+    }
+
+    @Override
+    public void realease() throws InterruptedException, KeeperException, ZookeeperLockException {
+        if(LockContainer.getLockString(Thread.currentThread()) != null) {
+            this.deletePath(LockContainer.getLockStringRemoved(Thread.currentThread()));
+        }
+    }
+
+    @Override
+    public String getLockString() {
+        return LockContainer.getLockString(Thread.currentThread());
     }
 }

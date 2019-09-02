@@ -3,6 +3,7 @@ package com.yujun.zookeeper.base.lock;
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.exception.ZookeeperLockUnreleaseException;
 import com.yujun.zookeeper.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.KeeperException;
@@ -18,65 +19,80 @@ import java.util.concurrent.TimeUnit;
  * @description TODO
  **/
 @Slf4j
+@Deprecated
 public class ZookeeperNormalLock extends ZookeeperBaseLock {
 
-    private String lockString;
     private BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
 
-    public ZookeeperNormalLock(ZookeeperConnectConfig config) {
-        super(config);
+    public ZookeeperNormalLock(ZookeeperConnectConfig config, String lockString) {
+        super(config, lockString);
     }
 
     @Override
-    public void lock(String lockString) throws InterruptedException, KeeperException, ZookeeperLockException {
-        this.lockString = Const.LOCK + Const.ZOOKEEPERSEPRITE  + lockString;
-        while(exists(this.lockString, waitObject) != null) {
-            waitObject.take();
-            try {
-                this.lockString = createEphemeralNode(this.lockString, null);
-                break;
-            } catch (KeeperException.NodeExistsException e) {
-                continue;
+    public void lock() throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
+        this.checkedLockRelease();
+        String tempLockString = Const.LOCK + Const.ZOOKEEPERSEPRITE  + lockString;
+        String fullNode = null;
+        if(exists(tempLockString, waitObject) != null) {
+            while (fullNode == null) {
+                System.out.println("Set watch...." + tempLockString);
+                waitObject.take();
+                try {
+                    fullNode = createEphemeralNode(tempLockString, null);
+                    LockContainer.addLock(Thread.currentThread(), fullNode);
+                    break;
+                } catch (KeeperException.NodeExistsException e) {
+                    fullNode = null;
+                    continue;
+                }
             }
+        } else {
+
         }
     }
 
     @Override
-    public boolean lock(String lockString, int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException {
-        this.lockString = Const.LOCK + Const.ZOOKEEPERSEPRITE  + lockString;
+    public boolean lock(int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
+        this.checkedLockRelease();
+        String tempLockString = Const.LOCK + Const.ZOOKEEPERSEPRITE  + lockString;
         long lockTime = TimeUtil.toMicros(waitTime, unit);
         long start = System.currentTimeMillis();
         start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
         long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
-        while(exists(this.lockString, waitObject) != null) {
+        String fullNode = null;
+        try {
+            fullNode = createEphemeralNode(tempLockString, null);
+            LockContainer.addLock(Thread.currentThread(), fullNode);
+            return true;
+        } catch(KeeperException.NodeExistsException e) {
+            fullNode = null;
+        }
+        while(fullNode == null) {
+            exists(tempLockString, waitObject);
             now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
             lockTime = lockTime - (now - start);
             try {
-                String poll = waitObject.poll(lockTime, unit);
-                if(poll == null)
+                String poll = waitObject.poll(lockTime, TimeUnit.MICROSECONDS);
+                if(poll == null) {
                     return false;
+                } else {
+                    if(exists(fullNode, waitObject) == null) {
+                        try {
+                            fullNode = createEphemeralNode(tempLockString, null);
+                            LockContainer.addLock(Thread.currentThread(), fullNode);
+                            break;
+                        } catch (KeeperException.NodeExistsException e) {
+                            fullNode = null;
+                            continue;
+                        }
+                    }
+                }
             } catch (InterruptedException e) {
                 return false;
             }
-            try {
-                this.lockString = createEphemeralNode(this.lockString, null);
-                break;
-            } catch (KeeperException.NodeExistsException e) {
-                continue;
-            }
+
         }
         return true;
     }
 
-
-    @Override
-    public void realease() throws InterruptedException, KeeperException, ZookeeperLockException {
-        if(this.lockString != null)
-            this.deletePath(this.lockString);
-    }
-
-    @Override
-    public String getLockString() {
-        return this.lockString;
-    }
 }

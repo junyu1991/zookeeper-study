@@ -2,14 +2,14 @@ package com.yujun.zookeeper.base.lock;
 
 import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
-import com.yujun.zookeeper.base.ZookeeperConnector;
 import com.yujun.zookeeper.exception.ZookeeperLockException;
+import com.yujun.zookeeper.exception.ZookeeperLockUnreleaseException;
 import com.yujun.zookeeper.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,19 +20,19 @@ import java.util.concurrent.TimeUnit;
  **/
 @Slf4j
 public class ZookeeperSequentialLock extends ZookeeperBaseLock {
-
-    private String lockPath;
-    private BlockingQueue<String> waitObject;
-
-    public ZookeeperSequentialLock(ZookeeperConnectConfig config) {
-        super(config);
+    private BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
+    public ZookeeperSequentialLock(ZookeeperConnectConfig config, String lockString) {
+        super(config, lockString);
     }
 
     @Override
-    public void lock(String lockString) throws InterruptedException, KeeperException, ZookeeperLockException {
-        this.lockPath = Const.SEQUENTIALLOCK + Const.ZOOKEEPERSEPRITE  + lockString + Const.ZOOKEEPERSEPRITE + lockString;
-        String fullNode = this.createNode(this.lockPath, null);
-        this.lockPath = fullNode;
+    public void lock() throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
+        this.checkedLockRelease();
+        String tempLockString = Const.SEQUENTIALLOCK + Const.ZOOKEEPERSEPRITE  + lockString + Const.ZOOKEEPERSEPRITE + lockString;
+        String fullNode = this.createNode(tempLockString, null);
+
+        LockContainer.addLock(Thread.currentThread(), fullNode);
+
         String path = Const.SEQUENTIALLOCK + Const.ZOOKEEPERSEPRITE  + lockString;
         String lowerNode = this.getNextLowerNode(path, fullNode);
         while(lowerNode != null) {
@@ -46,10 +46,11 @@ public class ZookeeperSequentialLock extends ZookeeperBaseLock {
     }
 
     @Override
-    public boolean lock(String lockString, int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException {
-        this.lockPath = Const.SEQUENTIALLOCK + Const.ZOOKEEPERSEPRITE  + lockString + Const.ZOOKEEPERSEPRITE + lockString;
-        String fullNode = this.createNode(this.lockPath, null);
-        this.lockPath = fullNode;
+    public boolean lock(int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
+        this.checkedLockRelease();
+        String tempLockString = Const.SEQUENTIALLOCK + Const.ZOOKEEPERSEPRITE  + lockString + Const.ZOOKEEPERSEPRITE + lockString;
+        String fullNode = this.createNode(tempLockString, null);
+        LockContainer.addLock(Thread.currentThread(), fullNode);
         String path = Const.SEQUENTIALLOCK + Const.ZOOKEEPERSEPRITE  + lockString;
         String lowerNode = this.getNextLowerNode(path, fullNode);
         long lockTime = TimeUtil.toMicros(waitTime, unit);
@@ -61,11 +62,15 @@ public class ZookeeperSequentialLock extends ZookeeperBaseLock {
             lockTime = lockTime - (now - start);
             if(exists(lowerNode, waitObject) != null) {
                 try {
-                    String poll = this.waitObject.poll(lockTime, unit);
-                    if (poll == null)
+                    String poll = this.waitObject.poll(lockTime, TimeUnit.MICROSECONDS);
+                    if (poll == null) {
+                        //获取锁超时，删除创建的path以防死锁
+                        this.realease();
                         return false;
+                    }
                     lowerNode = getNextLowerNode(path, lowerNode);
                 } catch (InterruptedException e) {
+                    this.realease();
                     return false;
                 }
             } else {
@@ -75,14 +80,4 @@ public class ZookeeperSequentialLock extends ZookeeperBaseLock {
         return true;
     }
 
-    @Override
-    public void realease() throws InterruptedException, KeeperException, ZookeeperLockException {
-        if(this.lockPath != null)
-            this.deletePath(this.lockPath);
-    }
-
-    @Override
-    public String getLockString() {
-        return this.lockPath;
-    }
 }

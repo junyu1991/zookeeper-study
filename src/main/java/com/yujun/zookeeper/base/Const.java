@@ -8,7 +8,7 @@ package com.yujun.zookeeper.base;
  **/
 public class Const {
     /** 分布式读写锁path **/
-    public static final String READWRITELOCK = "/lock/_locknoe_/rw";
+    public static final String READWRITELOCK = "/lock/_locknode_/rw";
 
     /** 读锁前缀 **/
     public static final String READ = "read-";

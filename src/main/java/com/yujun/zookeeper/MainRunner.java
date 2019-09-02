@@ -1,15 +1,6 @@
 package com.yujun.zookeeper;
 
-import com.yujun.zookeeper.base.Const;
 import com.yujun.zookeeper.base.ZookeeperConnectConfig;
-import com.yujun.zookeeper.test.DeleteNodeThread;
-import com.yujun.zookeeper.test.ReadWriteThread;
-import com.yujun.zookeeper.util.ZookeeperCompartor;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooDefs;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author admin
@@ -46,15 +37,7 @@ public class MainRunner {
     }
 
     public static void testRead(ZookeeperConnectConfig config, String lockName) {
-        ReadWriteThread rt1 = new ReadWriteThread(1,"read-thread-1", config, lockName);
-        ReadWriteThread rt2 = new ReadWriteThread(2, "read-thread-2", config, lockName);
-        ReadWriteThread rt3 = new ReadWriteThread(3, "read-thread-3", config, lockName);
-        ReadWriteThread rt4 = new ReadWriteThread(5, "read-thread-4", config, lockName);
-        //DeleteNodeThread dn = new DeleteNodeThread("Delete-thread", writeNode, connectConfig);
-        rt3.start();
-        rt4.start();
-        rt1.start();
-        rt2.start();
+
     }
 
     public static void testSequentialLock(ZookeeperConnectConfig config, String lockName) {
