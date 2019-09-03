@@ -21,8 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ZookeeperReadLock extends ZookeeperBaseLock {
 
-    /** 用于和LockWatcher通讯 **/
-    private BlockingQueue<String> blockingQueue = new LinkedBlockingQueue<String>();
+
     /** 等待锁时间 **/
     private int waitTime = 10000;
 
@@ -50,6 +49,8 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
         LockContainer.addLock(Thread.currentThread(), nodeName);
         String writeNode = getNextLowerNode(path, nodeName, writeLockString);
         log.info("Get Write node : " + writeNode);
+        /** 用于和LockWatcher通讯 **/
+        BlockingQueue<String> blockingQueue = new LinkedBlockingQueue<String>();
         while(writeNode != null) {
             if(exists(writeNode, blockingQueue) != null) {
                 blockingQueue.take();
@@ -74,6 +75,8 @@ public class ZookeeperReadLock extends ZookeeperBaseLock {
         long start = System.currentTimeMillis();
         start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
         long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        /** 用于和LockWatcher通讯 **/
+        BlockingQueue<String> blockingQueue = new LinkedBlockingQueue<String>();
         while(writeNode != null) {
             now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
             lockTime = lockTime - (now - start);

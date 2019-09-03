@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
 import java.util.List;
@@ -43,7 +44,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
     }
 
     /**
-     * 创建zookeeper path
+     * 创建zookeeper path,创建的path为临时递增节点
      * @author: yujun
      * @date: 2019/8/26
      * @description: TODO
@@ -223,7 +224,7 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
     protected void checkedLockRelease() throws ZookeeperLockUnreleaseException {
         Thread t = Thread.currentThread();
         if(LockContainer.containLock(t)) {
-            throw new ZookeeperLockUnreleaseException("The current thread has unrelease lock [" + LockContainer.getLockString(t)+"]");
+            throw new ZookeeperLockUnreleaseException("The current thread has unreleased lock [" + LockContainer.getLockString(t)+"]");
         }
     }
 
@@ -237,5 +238,22 @@ public abstract class ZookeeperBaseLock implements ZookeeperLock {
     @Override
     public String getLockString() {
         return LockContainer.getLockString(Thread.currentThread());
+    }
+
+    /**
+     * 对<code>org.apache.zookeeper.ZooKeeper.create()</code>方法的封装
+     *
+     * @author: yujun
+     * @date: 2019/9/3
+     * @description: TODO
+     * @param path
+     * @param data
+     * @param acl
+     * @param createMode
+     * @return:
+     * @exception:
+    */
+    protected String createNode(String path, byte[] data, List<ACL> acl, CreateMode createMode) throws KeeperException, InterruptedException {
+        return this.zookeeperConnector.getZooKeeper().create(path, data, acl, createMode);
     }
 }

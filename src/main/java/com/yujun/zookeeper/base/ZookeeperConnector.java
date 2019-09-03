@@ -145,8 +145,12 @@ public class ZookeeperConnector {
             sb.append("/");
         }
         sb.append(split[split.length-1]);
-        if(zooKeeper.exists(sb.toString(), false) == null)
-            result = zooKeeper.create(sb.toString(), data, acl, createMode);
+        try {
+            if (zooKeeper.exists(sb.toString(), false) == null)
+                result = zooKeeper.create(sb.toString(), data, acl, createMode);
+        } catch (KeeperException.NodeExistsException e) {
+
+        }
         return result;
     }
 

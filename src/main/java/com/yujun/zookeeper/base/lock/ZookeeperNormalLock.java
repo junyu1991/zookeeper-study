@@ -6,7 +6,9 @@ import com.yujun.zookeeper.exception.ZookeeperLockException;
 import com.yujun.zookeeper.exception.ZookeeperLockUnreleaseException;
 import com.yujun.zookeeper.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooDefs;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,10 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @description TODO
  **/
 @Slf4j
-@Deprecated
 public class ZookeeperNormalLock extends ZookeeperBaseLock {
-
-    private BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
 
     public ZookeeperNormalLock(ZookeeperConnectConfig config, String lockString) {
         super(config, lockString);
@@ -32,22 +31,19 @@ public class ZookeeperNormalLock extends ZookeeperBaseLock {
     public void lock() throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
         this.checkedLockRelease();
         String tempLockString = Const.LOCK + Const.ZOOKEEPERSEPRITE  + lockString;
+        createPersistentNode(Const.LOCK, null);
         String fullNode = null;
-        if(exists(tempLockString, waitObject) != null) {
-            while (fullNode == null) {
-                System.out.println("Set watch...." + tempLockString);
+        BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
+        while (fullNode == null) {
+            try {
+                fullNode = createNode(tempLockString, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                LockContainer.addLock(Thread.currentThread(), fullNode);
+                break;
+            } catch (KeeperException.NodeExistsException e) {
+                fullNode = null;
+                exists(tempLockString, waitObject);
                 waitObject.take();
-                try {
-                    fullNode = createEphemeralNode(tempLockString, null);
-                    LockContainer.addLock(Thread.currentThread(), fullNode);
-                    break;
-                } catch (KeeperException.NodeExistsException e) {
-                    fullNode = null;
-                    continue;
-                }
             }
-        } else {
-
         }
     }
 
@@ -55,40 +51,32 @@ public class ZookeeperNormalLock extends ZookeeperBaseLock {
     public boolean lock(int waitTime, TimeUnit unit) throws InterruptedException, KeeperException, ZookeeperLockException, ZookeeperLockUnreleaseException {
         this.checkedLockRelease();
         String tempLockString = Const.LOCK + Const.ZOOKEEPERSEPRITE  + lockString;
+        createPersistentNode(Const.LOCK, null);
         long lockTime = TimeUtil.toMicros(waitTime, unit);
         long start = System.currentTimeMillis();
         start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
         long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         String fullNode = null;
-        try {
-            fullNode = createEphemeralNode(tempLockString, null);
-            LockContainer.addLock(Thread.currentThread(), fullNode);
-            return true;
-        } catch(KeeperException.NodeExistsException e) {
-            fullNode = null;
-        }
+        BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
         while(fullNode == null) {
-            exists(tempLockString, waitObject);
             now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
             lockTime = lockTime - (now - start);
             try {
-                String poll = waitObject.poll(lockTime, TimeUnit.MICROSECONDS);
-                if(poll == null) {
-                    return false;
-                } else {
-                    if(exists(fullNode, waitObject) == null) {
-                        try {
-                            fullNode = createEphemeralNode(tempLockString, null);
-                            LockContainer.addLock(Thread.currentThread(), fullNode);
-                            break;
-                        } catch (KeeperException.NodeExistsException e) {
-                            fullNode = null;
-                            continue;
-                        }
+                fullNode = createNode(tempLockString, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                LockContainer.addLock(Thread.currentThread(), fullNode);
+                break;
+            } catch (KeeperException.NodeExistsException e) {
+                fullNode = null;
+                exists(tempLockString, waitObject);
+                try {
+                    String poll = waitObject.poll(lockTime, TimeUnit.MICROSECONDS);
+                    if (poll == null) {
+                        return false;
                     }
+                } catch (InterruptedException ex) {
+                    return false;
                 }
-            } catch (InterruptedException e) {
-                return false;
+                continue;
             }
 
         }

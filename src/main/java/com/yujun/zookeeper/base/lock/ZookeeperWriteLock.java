@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ZookeeperWriteLock extends ZookeeperBaseLock {
 
-    private BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
-
     public ZookeeperWriteLock(ZookeeperConnectConfig config, String lockString) {
         super(config, lockString);
     }
@@ -36,9 +34,10 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
         LockContainer.addLock(Thread.currentThread(), nodeName);
         String writeNode = getNextLowerNode(path, nodeName);
         log.info("Get Write node : " + writeNode);
+        BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
         while(writeNode != null) {
             if(exists(writeNode, waitObject) != null) {
-                this.waitObject.take();
+                waitObject.take();
                 writeNode = getNextLowerNode(path, nodeName);
             } else {
                 writeNode = getNextLowerNode(path, nodeName);
@@ -59,12 +58,13 @@ public class ZookeeperWriteLock extends ZookeeperBaseLock {
         start = TimeUtil.toMicros(start, TimeUnit.MILLISECONDS);
         long now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         log.info("Get Write node : " + writeNode);
+        BlockingQueue<String> waitObject = new LinkedBlockingQueue<String>();
         while(writeNode != null) {
             now = TimeUtil.toMicros(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
             lockTime = lockTime - (now - start);
             if(exists(writeNode, waitObject) != null) {
                 try {
-                    String poll = this.waitObject.poll(lockTime, TimeUnit.MICROSECONDS);
+                    String poll = waitObject.poll(lockTime, TimeUnit.MICROSECONDS);
                     if(poll == null) {
                         //获取锁超时，删除创建的path以防死锁
                         this.realease();
