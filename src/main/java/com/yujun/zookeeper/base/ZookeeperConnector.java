@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 public class ZookeeperConnector {
     /**  **/
-    private static volatile ZookeeperConnector instance = null;
+    private ZookeeperConnector instance = null;
     /**  **/
     private ZooKeeper zooKeeper = null;
 
@@ -24,9 +24,13 @@ public class ZookeeperConnector {
     }
 
     public static ZookeeperConnector getInstance(ZookeeperConnectConfig config){
-        synchronized (ZookeeperConnector.class) {
-            if(instance == null)
-                instance = new ZookeeperConnector(config);
+        ZookeeperConnectorPool pool = ZookeeperConnectorPool.getConnectorPool();
+        if(pool.containerConnctor(config)){
+            return pool.getConnector(config);
+        } else {
+            ZookeeperConnector instance = null;
+            instance = new ZookeeperConnector(config);
+            pool.addConnector(config, instance);
             return instance;
         }
     }
@@ -54,7 +58,7 @@ public class ZookeeperConnector {
     */
     public void init(ZookeeperConnectConfig config){
         try {
-            this.zooKeeper = new ZooKeeper(config.getConnectString(), config.getSessionTimeout(), new ConnectWatcher());
+            this.zooKeeper = new ZooKeeper(config.getConnectString(), config.getSessionTimeout(), new ZookeeperConnectWatcher());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -181,12 +185,3 @@ public class ZookeeperConnector {
     }
 }
 
-/**
- * @author: admin
- * @date: 2019/8/22
- * @description: TODO
-*/
-class ConnectWatcher implements Watcher {
-    public void process(WatchedEvent watchedEvent) {
-    }
-}
